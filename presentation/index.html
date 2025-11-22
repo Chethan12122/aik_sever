@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="email"],
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            /* background: #007bff; */
+            background: #ff5100;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+            /* background-color: #ff5100; */
+        }
+        .message {
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OTP Service</h1>
+        <form id="sendOtpForm">
+            <label for="email">Enter your email:</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
+            <button type="submit">Send OTP</button>
+        </form>
+
+        <form id="verifyOtpForm" style="display: none;">
+            <label for="otp">Enter OTP:</label>
+            <input type="text" id="otp" placeholder="Enter the OTP" required>
+            <button type="submit">Verify OTP</button>
+        </form>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const sendOtpForm = document.getElementById('sendOtpForm');
+        const verifyOtpForm = document.getElementById('verifyOtpForm');
+        const messageDiv = document.getElementById('message');
+
+        sendOtpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            messageDiv.textContent = "Sending OTP...";
+            try {
+                const response = await fetch('/sendOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.textContent = "OTP sent successfully!";
+                    sendOtpForm.style.display = 'none';
+                    verifyOtpForm.style.display = 'block';
+                } else {
+                    messageDiv.textContent = `Error: ${result.error}`;
+                }
+            } catch (error) {
+                console.error("Error sending OTP:", error);
+                messageDiv.textContent = "Failed to send OTP. Please try again.";
+            }
+        });
+
+        verifyOtpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otp = document.getElementById('otp').value;
+            const email = document.getElementById('email').value;
+            messageDiv.textContent = "Verifying OTP...";
+            try {
+                const response = await fetch('/verifyOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, userOtp: otp })
+                });
+                const result = await response.json();
+                if (result.verified) {
+                    messageDiv.textContent = "OTP verified successfully!";
+                } else {
+                    messageDiv.textContent = "Invalid OTP. Please try again.";
+                }
+            } catch (error) {
+                console.error("Error verifying OTP:", error);
+                messageDiv.textContent = "Failed to verify OTP. Please try again.";
+            }
+        });
+    </script>
+</body>
+</html>

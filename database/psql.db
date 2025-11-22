@@ -1,0 +1,550 @@
+1)
+CREATE TABLE users (
+    id Serial PRIMARY KEY ,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(100),
+    password VARCHAR(255) NOT NULL,
+    firebase_uid VARCHAR(255) UNIQUE,
+    verified_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    password_hash_version INT DEFAULT 1,
+    version INT DEFAULT 1,
+    valid_time tstzrange, -- Optional: for tracking active status in a time range
+    CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+);
+-- Indexes
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_firebase_uid ON users (firebase_uid);
+CREATE INDEX idx_users_verified_at ON users (verified_at);
+CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX idx_users_valid_time ON users USING gist (valid_time);
+
+2)
+
+CREATE TABLE workouts (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    duration INT NOT NULL,
+    image TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    level TEXT NOT NULL,
+    video TEXT,
+    steps TEXT[],
+    outcomes TEXT[],
+    category TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_email FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
+);
+
+CHECK (level IN ('Beginner', 'Intermediate', 'Advanced')) // Not Included
+
+****  Large Scale  ****
+CREATE TABLE workouts (
+    id SERIAL,
+    w_id INT NOT NULL
+    email TEXT NOT NULL,
+    duration INT NOT NULL,
+    image TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    level TEXT NOT NULL CHECK (level IN ('Beginner', 'Intermediate', 'Advanced')),
+    video TEXT,
+    steps JSONB,
+    outcomes JSONB,
+    category TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_workouts PRIMARY KEY (id),
+    CONSTRAINT fk_user_id FOREIGN KEY (w_id) REFERENCES users(id) ON DELETE CASCADE
+) PARTITION BY RANGE (created_at);
+-- Indexes
+CREATE INDEX idx_workouts_email ON workouts(email);
+CREATE INDEX idx_workouts_category ON workouts(category);
+CREATE INDEX idx_workouts_level ON workouts(level);
+CREATE INDEX idx_workouts_created_at ON workouts(created_at);
+
+**************************************************   Finall Large scales workout page ****************************************************
+-- 1. ENUM for workout difficulty levels
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workout_level') THEN
+        CREATE TYPE workout_level AS ENUM ('Beginner', 'Intermediate', 'Advanced');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workout_category') THEN
+        CREATE TYPE workout_category AS ENUM ('Cardio', 'Strength', 'Flexibility', 'Balance', 'Other');
+    END IF;
+END$$;
+
+CREATE TABLE workouts (
+    workout_id BIGSERIAL NOT NULL,                   
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,   
+    duration SMALLINT NOT NULL,
+    image VARCHAR(255),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    level workout_level NOT NULL,
+    video VARCHAR(255),
+    steps JSONB,
+    outcomes JSONB,
+    category workout_category NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(workout_id, created_at)
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE workouts_2025_q1 PARTITION OF workouts
+    FOR VALUES FROM ('2025-01-01 00:00:00+00') TO ('2025-04-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q2 PARTITION OF workouts
+    FOR VALUES FROM ('2025-04-01 00:00:00+00') TO ('2025-07-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q3 PARTITION OF workouts
+    FOR VALUES FROM ('2025-07-01 00:00:00+00') TO ('2025-10-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q4 PARTITION OF workouts
+    FOR VALUES FROM ('2025-10-01 00:00:00+00') TO ('2026-01-01 00:00:00+00');
+
+CREATE TABLE workouts_default PARTITION OF workouts DEFAULT;
+
+CREATE INDEX idx_workouts_user_id ON workouts(user_id);
+CREATE INDEX idx_workouts_category ON workouts(category);
+CREATE INDEX idx_workouts_level ON workouts(level);
+CREATE INDEX idx_workouts_created_at ON workouts(created_at);
+
+CREATE INDEX idx_workouts_steps_gin ON workouts USING GIN (steps);
+CREATE INDEX idx_workouts_outcomes_gin ON workouts USING GIN (outcomes);
+
+ALTER TABLE workouts ADD CONSTRAINT unique_user_title UNIQUE (user_id, title, created_at);
+
+
+
+#########################  THIS IS THE UPDATED AND ADDED DEVICE WORKOUT PAGE TABLE FULLY UPDATE  ################################
+
+
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workout_level') THEN
+        CREATE TYPE workout_level AS ENUM ('Beginner', 'Intermediate', 'Advanced');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workout_category') THEN
+        CREATE TYPE workout_category AS ENUM ('Cardio', 'Strength', 'Flexibility', 'Balance', 'Other');
+    END IF;
+END$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'device_mode_enum') THEN
+        CREATE TYPE device_mode_enum AS ENUM ('Sprint', 'Jump', 'Alert', 'Master', 'Slave');
+    END IF;
+END$$;
+
+CREATE TABLE workouts (
+    workout_id BIGSERIAL NOT NULL,
+    duration SMALLINT NOT NULL,
+    image VARCHAR(255),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    level workout_level NOT NULL,
+    video VARCHAR(255),
+    steps JSONB,
+    outcomes JSONB,
+    is_performance_test BOOLEAN,
+    device_support INT CHECK (device_support IN (0, 1, 2)),
+    device_config BOOLEAN,
+    device_mode device_mode_enum,
+    category workout_category NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(workout_id, created_at)
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE workouts_2025_q1 PARTITION OF workouts
+    FOR VALUES FROM ('2025-01-01 00:00:00+00') TO ('2025-04-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q2 PARTITION OF workouts
+    FOR VALUES FROM ('2025-04-01 00:00:00+00') TO ('2025-07-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q3 PARTITION OF workouts
+    FOR VALUES FROM ('2025-07-01 00:00:00+00') TO ('2025-10-01 00:00:00+00');
+
+CREATE TABLE workouts_2025_q4 PARTITION OF workouts
+    FOR VALUES FROM ('2025-10-01 00:00:00+00') TO ('2026-01-01 00:00:00+00');
+
+CREATE TABLE workouts_default PARTITION OF workouts DEFAULT;
+
+CREATE INDEX idx_workouts_category ON workouts(category);
+CREATE INDEX idx_workouts_level ON workouts(level);
+CREATE INDEX idx_workouts_created_at ON workouts(created_at);
+CREATE INDEX idx_workouts_steps_gin ON workouts USING GIN (steps);
+CREATE INDEX idx_workouts_outcomes_gin ON workouts USING GIN (outcomes);
+
+ALTER TABLE workouts ADD CONSTRAINT unique_title_created_at UNIQUE (title, created_at);
+
+###########################################################################################
+
+*******************************************************************************************
+3)
+CREATE TABLE details (
+    id SERIAL PRIMARY KEY,
+
+    user_id UUID NOT NULL UNIQUE,  -- Unique, 1:1 relation with users
+    role VARCHAR(20) NOT NULL CHECK (role IN ('athlete', 'trainer')),
+
+    name VARCHAR(100),
+    gender VARCHAR(10),
+    date_of_birth DATE,
+    weight NUMERIC(5,2),
+    height NUMERIC(5,2),
+
+    about_me TEXT,
+    interests TEXT[],
+    achievements TEXT[],  -- currently we removed this ...
+    work VARCHAR(255),
+    location VARCHAR(255),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_details_user_id ON details(user_id);
+CREATE INDEX idx_details_role ON details(role);
+CREATE INDEX idx_details_gender ON details(gender);
+CREATE INDEX idx_details_location ON details(location);
+
+
+ALTER TABLE details
+ADD COLUMN primary_sport VARCHAR(100),
+ADD COLUMN weight_unit VARCHAR(10),
+ADD COLUMN height_unit VARCHAR(10);
+
+
+
+3)
+create table a_meeting( 
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    name VARCHAR(250) ,
+    occupation VARCHAR(250) ,
+    organization VARCHAR(250) ,
+    contact_mode TEXT,
+    phone_number INT NOT NULL,
+    purpose VARCHAR(250) ,
+    remarks VARCHAR(250) ,
+    status VARCHAR(250) ,
+    category VARCHAR(250)  ,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+
+7) 
+Updated teams table structure
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sport_type') THEN
+        CREATE TYPE sport_type AS ENUM ('Soccer','Cricket','Football','Hockey','Running', 'Basketball', 'Tennis', 'Baseball', 'Other');
+    END IF;
+END $$;
+
+CREATE TABLE teams (
+    team_id BIGSERIAL PRIMARY KEY,
+    owner_user_id BIGINT NOT NULL,
+    img VARCHAR(255),
+    team_name VARCHAR(255) NOT NULL,
+    sport sport_type NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_teams_owner FOREIGN KEY (owner_user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_teams_team_name ON teams(team_name);
+CREATE INDEX idx_teams_sport ON teams(sport);
+CREATE INDEX idx_teams_created_at ON teams(created_at);
+
+CREATE TABLE team_trainers (
+    team_trainer_id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT NOT NULL REFERENCES teams(team_id) ON DELETE CASCADE,
+    trainer_user_id BIGINT NOT NULL,
+    CONSTRAINT fk_team_trainers_user FOREIGN KEY (trainer_user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_team_trainers_team_id ON team_trainers(team_id);
+CREATE INDEX idx_team_trainers_user_id ON team_trainers(trainer_user_id);
+
+CREATE TABLE team_athletes (
+    team_athlete_id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT NOT NULL REFERENCES teams(team_id) ON DELETE CASCADE,
+    athlete_user_id BIGINT NOT NULL,
+    CONSTRAINT fk_team_athletes_user FOREIGN KEY (athlete_user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_team_athletes_team_id ON team_athletes(team_id);
+CREATE INDEX idx_team_athletes_user_id ON team_athletes(athlete_user_id);
+************************************************************************************************
+
+
+
+8)  
+Feeds table creation
+
+CREATE TABLE feeds (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    image_url TEXT NOT NULL,  
+    description TEXT,          
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+
+    CONSTRAINT fk_user
+        FOREIGN KEY (user_id) 
+        REFERENCES users (id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_feed_user_id ON feeds (user_id);
+CREATE INDEX idx_feed_created_at ON feeds (created_at);
+// 
+CREATE INDEX idx_feed_privacy ON feeds (privacy);
+
+// 
+just skipped this 
+    -- Optional: additional fields like privacy, category, etc.
+    privacy VARCHAR(50) DEFAULT 'public',
+    category VARCHAR(100),
+
+
+
+
+Updated Feeds table with added the email fields :-
+
+CREATE TABLE feeds (
+    id BIGSERIAL PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    image_url TEXT NOT NULL,  
+    description TEXT,          
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_user_email
+        FOREIGN KEY (user_email) 
+        REFERENCES users (email)
+        ON DELETE CASCADE
+);
+  
+CREATE INDEX idx_feed_user_email ON feeds (user_email);
+CREATE INDEX idx_feed_created_at ON feeds (created_at);
+
+
+Updated feeds with like,unlike,comments
+ 
+CREATE TABLE feeds (
+    id BIGSERIAL PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    image_url TEXT NOT NULL,  
+    description TEXT,          
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_user_email
+        FOREIGN KEY (user_email) 
+        REFERENCES users (email)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_feed_user_email ON feeds (user_email);
+CREATE INDEX idx_feed_created_at ON feeds (created_at);
+ 
+CREATE TABLE feeds_likes (
+    id BIGSERIAL PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    feed_id BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_like_user_email
+        FOREIGN KEY (user_email)
+        REFERENCES users (email)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_like_feed_id
+        FOREIGN KEY (feed_id)
+        REFERENCES feeds (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT unique_like
+        UNIQUE (user_email, feed_id)  
+);
+ 
+CREATE TABLE feeds_comments (
+    id BIGSERIAL PRIMARY KEY,
+    user_email TEXT NOT NULL,
+    feed_id BIGINT NOT NULL,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_comment_user_email
+        FOREIGN KEY (user_email)
+        REFERENCES users (email)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_comment_feed_id
+        FOREIGN KEY (feed_id)
+        REFERENCES feeds (id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_comments_feed_id ON feeds_comments (feed_id);
+CREATE INDEX idx_comments_created_at ON feeds_comments (created_at);
+
+
+
+*************************************************************
+
+
+
+Table for the achievements :--------
+
+CREATE TABLE achievements (
+    id BIGSERIAL PRIMARY KEY,                
+    title VARCHAR(200) NOT NULL,
+    issued_by VARCHAR(150),
+    achievement_date DATE,
+    sports VARCHAR(100),
+    image_url TEXT,                          
+    email VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_user_email FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_achievements_email ON achievements(email);
+
+-- Optional: index on date or sports if you query/filter by these fields often actually i didnt added this 
+CREATE INDEX idx_achievements_date ON achievements(achievement_date);
+CREATE INDEX idx_achievements_sports ON achievements(sports);
+
+******************************************************************
+
+table for subscription 
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coupon_code TEXT UNIQUE NOT NULL,
+    user_email TEXT  REFERENCES users(email) ON DELETE CASCADE,
+    issued_at TIMESTAMP DEFAULT now(),
+    expires_at TIMESTAMP NOT NULL,
+    redeemed BOOLEAN DEFAULT FALSE,
+    CONSTRAINT unique_user_coupon UNIQUE (user_email, coupon_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_coupons_user_email ON coupons(user_email);
+CREATE INDEX IF NOT EXISTS idx_coupons_expires_at ON coupons(expires_at);
+CREATE INDEX IF NOT EXISTS idx_coupons_coupon_code ON coupons(coupon_code);
+
+updated the ids here because there we got some issue from the azure 
+
+CREATE TABLE IF NOT EXISTS coupons (
+    id SERIAL PRIMARY KEY,
+    coupon_code TEXT UNIQUE NOT NULL,
+    user_email TEXT REFERENCES users(email) ON DELETE CASCADE,
+    issued_at TIMESTAMP DEFAULT now(),
+    expires_at TIMESTAMP NOT NULL,
+    redeemed BOOLEAN DEFAULT FALSE,
+    CONSTRAINT unique_user_coupon UNIQUE (user_email, coupon_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_coupons_user_email ON coupons(user_email);
+CREATE INDEX IF NOT EXISTS idx_coupons_expires_at ON coupons(expires_at);
+CREATE INDEX IF NOT EXISTS idx_coupons_coupon_code ON coupons(coupon_code);
+
+
+****************************************************************************
+
+Followers Table
+CREATE TABLE follows (
+  id SERIAL PRIMARY KEY,
+  follower_id INT REFERENCES users(id) ON DELETE CASCADE,
+  following_id INT REFERENCES users(id) ON DELETE CASCADE,
+  status VARCHAR(10) NOT NULL DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(follower_id, following_id)
+);
+
+CREATE INDEX idx_follows_follower ON follows(follower_id);
+CREATE INDEX idx_follows_following ON follows(following_id);
+CREATE INDEX idx_follows_status ON follows(status);
+
+
+******************************************************************
+
+table for RAST_TEST 
+
+CREATE TABLE rast_test (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  sets JSONB NOT NULL 
+);
+
+ALTER TABLE rast_test
+ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT NOW();
+
+
+****************************************************************************
+
+
+Table for the Jump_Test
+
+CREATE TABLE Jump_Test (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    metrics JSONB NOT NULL
+);
+
+****************************************************************************
+ Table for the Sprint Test
+
+  CREATE TABLE Sprint_Test (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    gates JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+****************************************************************************
+
+****************************************************************************
+ Table for the Agility Test
+
+  CREATE TABLE agility_test (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    agility JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+****************************************************************************
+
+
+****************************************************************************
+ Table for the Velocity Test
+
+ CREATE TABLE velocity_test (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    velocity JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+****************************************************************************

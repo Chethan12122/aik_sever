@@ -1,0 +1,9 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/8d3f0f3f-0e55-4106-9cb3-55f2207dd446/resourceGroups/Aikyam/providers/Microsoft.Web/sites/DemoAikyam",
+    "appService.deploySubpath": ".",
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "liveServer.settings.port": 5501
+}
