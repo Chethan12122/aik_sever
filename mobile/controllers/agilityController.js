@@ -4,11 +4,17 @@ const agilityService = require('../services/agilityService');
 const createAgilityTest = async (req, res) => {
   try {
     const agilityTestData = req.body;
+    
+    // ✅ Optional: Validate required fields
+    if (!agilityTestData.name || !agilityTestData.email || !agilityTestData.agility) {
+      return res.status(400).json({ message: 'Missing required fields: name, email, or agility' });
+    }
+    
     const newTest = await agilityService.createAgilityTest(agilityTestData);
     res.status(201).json(newTest);
   } catch (error) {
     console.error('Error creating agility test:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 };
 
@@ -17,8 +23,8 @@ const getAgilityTestById = async (req, res) => {
   try {
     const { id } = req.params;
     const agilityTest = await agilityService.getAgilityTestById(id);
-    if (agilityTest) {
-      res.status(200).json(agilityTest);
+    if (agilityTest && agilityTest.length > 0) {
+      res.status(200).json(agilityTest[0]); // ✅ Return single object
     } else {
       res.status(404).json({ message: 'Agility Test not found' });
     }
@@ -60,8 +66,8 @@ const updateAgilityTest = async (req, res) => {
     const { id } = req.params;
     const agilityTestData = req.body;
     const updatedTest = await agilityService.updateAgilityTest(id, agilityTestData);
-    if (updatedTest) {
-      res.status(200).json(updatedTest);
+    if (updatedTest && updatedTest.length > 0) {
+      res.status(200).json(updatedTest[0]); // ✅ Return single object
     } else {
       res.status(404).json({ message: 'Agility Test not found' });
     }
@@ -76,8 +82,8 @@ const deleteAgilityTest = async (req, res) => {
   try {
     const { id } = req.params;
     const deletedTest = await agilityService.deleteAgilityTest(id);
-    if (deletedTest) {
-      res.status(200).json({ message: 'Agility Test deleted successfully' });
+    if (deletedTest && deletedTest.length > 0) {
+      res.status(200).json({ message: 'Agility Test deleted successfully', data: deletedTest[0] });
     } else {
       res.status(404).json({ message: 'Agility Test not found' });
     }
