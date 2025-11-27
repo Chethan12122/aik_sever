@@ -6,8 +6,6 @@ const createAgilityTest = async (data) => {
   const query = `
     INSERT INTO agility_test (name, email, agility, created_at, notes)
     VALUES ($1, $2, $3, $4, $5)
-    INSERT INTO agility_test (name, email, agility, created_at, notes)
-    VALUES ($1, $2, $3, $4, $5)
     RETURNING *;
   `;
   const result = await pool.query(query, [name, email, agility, created_at,notes || '']);  // ✅ Add notes parameter
@@ -41,8 +39,6 @@ const updateAgilityTest = async (id, data) => {
   const { name, email, agility, created_at, notes } = data; // ✅ Add notes
   const query = `
     UPDATE agility_test
-    SET name = $1, email = $2, agility = $3, created_at = $4, notes = $5
-    WHERE id = $6
     SET name = $1, email = $2, agility = $3, created_at = $4, notes = $5
     WHERE id = $6
     RETURNING *;
