@@ -2,13 +2,13 @@ const pool = require('../../database/db');
 
 // Create new velocity test
 const createVelocityTest = async (data) => {
-  const { name, email, velocity, created_at } = data;
+  const { name, email, velocity, notes, created_at } = data;
   const query = `
-    INSERT INTO velocity_test (name, email, velocity, created_at)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO velocity_test (name, email, velocity, notes, created_at)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *;
   `;
-  const result = await pool.query(query, [name, email, velocity, created_at]);
+  const result = await pool.query(query, [name, email, velocity, notes || '', created_at]);
   return result.rows;
 };
 // get all velocity tests
@@ -33,14 +33,14 @@ const getVelocityTestByEmail = async (email) => {
 
 // Update velocity test
 const updateVelocityTest = async (id, data) => {
-  const { name, email, velocity, created_at } = data;
+  const { name, email, velocity, notes, created_at } = data;
   const query = `
     UPDATE velocity_test
-    SET name = $1, email = $2, velocity = $3, created_at = $4
-    WHERE id = $5
+    SET name = $1, email = $2, velocity = $3, notes = $4, created_at = $5
+    WHERE id = $6
     RETURNING *;
   `;
-  const result = await pool.query(query, [name, email, velocity, created_at, id]);
+  const result = await pool.query(query, [name, email, velocity, notes || null, created_at, id]);
   return result.rows;
 };
 

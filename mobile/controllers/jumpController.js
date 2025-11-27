@@ -2,11 +2,11 @@ const jumpTestService = require('../services/jumpServices');
 
 const createJumpTest = async (req, res) => {
   try {
-    const { name, email, metrics } = req.body;
+    const { name, email, metrics, notes  } = req.body;
     if (!name || !email || !metrics) {
       return res.status(400).json({ message: "Missing required fields" });
     }
-    const newJumpTest = await jumpTestService.createJumpTest({ name, email, metrics });
+    const newJumpTest = await jumpTestService.createJumpTest({ name, email, metrics,notes });
     res.status(201).json(newJumpTest);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -52,8 +52,8 @@ const getJumpTestByEmail = async (req, res) => {
 const updateJumpTest = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, metrics } = req.body;
-    const updatedJumpTest = await jumpTestService.updateJumpTest(id, { name, email, metrics });
+        const { name, email, metrics, notes } = req.body;
+    const updatedJumpTest = await jumpTestService.updateJumpTest(id, { name, email, metrics, notes });
     if (!updatedJumpTest) return res.status(404).json({ message: "Jump Test not found" });
     res.json(updatedJumpTest);
   } catch (error) {

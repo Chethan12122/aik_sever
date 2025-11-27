@@ -25,17 +25,16 @@
 const pool = require('../../database/db');
 
 exports.createUser = async (userData) => {
-  const { name, email, sets } = userData;
- 
+  const { name, email, sets, notes } = userData;
   const timestamp = new Date().toISOString();
 
   const query = `
-    INSERT INTO rast_test (name, email, sets, created_at)
-    VALUES ($1, $2, $3, $4)
-    RETURNING *, $4 AS timestamp;
+    INSERT INTO rast_test (name, email, sets, notes, created_at)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *, $5 AS timestamp;
   `;
 
-  const values = [name, email, JSON.stringify(sets), timestamp];
+  const values = [name, email, JSON.stringify(sets), notes || '', timestamp];
 
   const result = await pool.query(query, values);
 
@@ -81,6 +80,8 @@ exports.updateUser = async (userId, updateData) => {
   for (const key in updateData) {
     if (key === 'sets') {
       values.push(JSON.stringify(updateData[key]));
+    } else if (key === 'notes') {
+      values.push(updateData[key] || null);
     } else {
       values.push(updateData[key]);
     }

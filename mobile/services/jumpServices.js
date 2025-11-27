@@ -1,9 +1,9 @@
 const pool = require('../../database/db');
 
-const createJumpTest = async ({ name, email, metrics }) => {
+const createJumpTest = async ({ name, email, metrics,notes }) => {
   const result = await pool.query(
-    `INSERT INTO Jump_Test (name, email, metrics) VALUES ($1, $2, $3) RETURNING *`,
-    [name, email, metrics]
+     `INSERT INTO Jump_Test (name, email, metrics, notes) VALUES ($1, $2, $3, $4) RETURNING *`,
+    [name, email, metrics, notes || '']
   );
   return result.rows[0];
 };
@@ -23,10 +23,10 @@ const getJumpTestByEmail = async (email) => {
   return result.rows;
 };
 
-const updateJumpTest = async (id, { name, email, metrics }) => {
+const updateJumpTest = async (id, { name, email, metrics, notes  }) => {
   const result = await pool.query(
-    `UPDATE Jump_Test SET name = $1, email = $2, metrics = $3 WHERE id = $4 RETURNING *`,
-    [name, email, metrics, id]
+    `UPDATE Jump_Test SET name = $1, email = $2, metrics = $3, notes = $4 WHERE id = $5 RETURNING *`,
+    [name, email, metrics, notes || null, id]
   );
   return result.rows[0];
 };

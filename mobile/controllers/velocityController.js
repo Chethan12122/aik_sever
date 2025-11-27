@@ -3,12 +3,29 @@ const velocityService = require('../services/velocityService');
 // Create velocity test
 const createvelocityTest = async (req, res) => {
   try {
-    const velocityTestData = req.body;
+    const { name, email, velocity, notes, created_at } = req.body;
+    
+    // ✅ Validate required fields
+    if (!name || !email || !velocity) {
+      return res.status(400).json({ 
+        message: "Missing required fields",
+        required: ["name", "email", "velocity"]
+      });
+    }
+
+    const velocityTestData = {
+      name,
+      email,
+      velocity,
+      notes, // ✅ Optional field
+      created_at: created_at || new Date().toISOString()
+    };
+
     const newTest = await velocityService.createVelocityTest(velocityTestData);
     res.status(201).json(newTest);
   } catch (error) {
     console.error('Error creating velocity test:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 };
 
@@ -17,10 +34,12 @@ const getvelocityTestById = async (req, res) => {
   try {
     const { id } = req.params;
     const velocityTest = await velocityService.getVelocityTestById(id);
-    if (velocityTest) {
+    
+    // ✅ Check array length since service returns array
+    if (velocityTest && velocityTest.length > 0) {
       res.status(200).json(velocityTest);
     } else {
-      res.status(404).json({ message: 'velocity Test not found' });
+      res.status(404).json({ message: 'Velocity test not found' });
     }
   } catch (error) {
     console.error('Error fetching velocity test by ID:', error);
@@ -31,9 +50,11 @@ const getvelocityTestById = async (req, res) => {
 // Get All velocity tests
 const getAllvelocityTests = async (req, res) => {
   try {
-    const velocityTest = await velocityService.getAllVelocityTests();
-    res.json(velocityTest);
+    const velocityTests = await velocityService.getAllVelocityTests();
+    // ✅ Always return array (even if empty)
+    res.status(200).json(velocityTests);
   } catch (error) {
+    console.error('Error fetching all velocity tests:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -43,11 +64,13 @@ const getvelocityTestsByEmail = async (req, res) => {
   try {
     const { email } = req.params;
     const velocityTests = await velocityService.getVelocityTestByEmail(email);
-    if (velocityTests.length > 0) {
-      res.status(200).json(velocityTests);
-    } else {
-      res.status(404).json({ message: 'No velocity tests found for this email' });
+    
+    // ✅ Return empty array instead of 404 (consistent with jump/sprint services)
+    if (!velocityTests || velocityTests.length === 0) {
+      return res.json([]);
     }
+    
+    res.status(200).json(velocityTests);
   } catch (error) {
     console.error('Error fetching velocity tests by email:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -58,12 +81,23 @@ const getvelocityTestsByEmail = async (req, res) => {
 const updatevelocityTest = async (req, res) => {
   try {
     const { id } = req.params;
-    const velocityTestData = req.body;
+    const { name, email, velocity, notes, created_at } = req.body;
+    
+    const velocityTestData = {
+      name,
+      email,
+      velocity,
+      notes,
+      created_at
+    };
+
     const updatedTest = await velocityService.updateVelocityTest(id, velocityTestData);
-    if (updatedTest) {
+    
+    // ✅ Check array length
+    if (updatedTest && updatedTest.length > 0) {
       res.status(200).json(updatedTest);
     } else {
-      res.status(404).json({ message: 'velocity Test not found' });
+      res.status(404).json({ message: 'Velocity test not found' });
     }
   } catch (error) {
     console.error('Error updating velocity test:', error);
@@ -76,10 +110,12 @@ const deletevelocityTest = async (req, res) => {
   try {
     const { id } = req.params;
     const deletedTest = await velocityService.deleteVelocityTest(id);
-    if (deletedTest) {
-      res.status(200).json({ message: 'velocity Test deleted successfully' });
+    
+    // ✅ Check array length
+    if (deletedTest && deletedTest.length > 0) {
+      res.status(200).json({ message: 'Velocity test deleted successfully' });
     } else {
-      res.status(404).json({ message: 'velocity Test not found' });
+      res.status(404).json({ message: 'Velocity test not found' });
     }
   } catch (error) {
     console.error('Error deleting velocity test:', error);

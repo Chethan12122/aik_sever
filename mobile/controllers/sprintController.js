@@ -1,80 +1,113 @@
-const sprintTestService = require('../services/sprintServices');
+const rastService = require('../services/rastService');
 
-const createsprintTest = async (req, res) => {
+exports.createUser = async (req, res) => {
   try {
-    const { name, email, gates , notes} = req.body;
-    if (!name || !email || !gates) {
-      return res.status(400).json({ message: "Missing required fields" });
+    const { name, email, sets, notes } = req.body;
+    
+    // ✅ Validate required fields
+    if (!name || !email || !sets) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['name', 'email', 'sets']
+      });
     }
-    const newsprintTest = await sprintTestService.createSprintTest({ name, email, gates,notes, });
-    res.status(201).json(newsprintTest);
+
+    // ✅ Validate sets is an array
+    if (!Array.isArray(sets)) {
+      return res.status(400).json({ 
+        error: 'Invalid data type',
+        message: 'sets must be an array'
+      });
+    }
+
+    const userData = { name, email, sets, notes };
+    const newUser = await rastService.createUser(userData);
+    res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error creating RAST test:', error);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 };
 
-const getAllsprintTests = async (req, res) => {
+exports.getUserById = async (req, res) => {
   try {
-    const sprintTests = await sprintTestService.getAllSprintTests();
-    res.json(sprintTests);
+    const userId = req.params.id;
+    const user = await rastService.getUserById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'RAST test not found' });
+    }
+    
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching RAST test by ID:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-const getsprintTestById = async (req, res) => {
+ 
+exports.getUserByEmail = async (req, res) => {
   try {
-    const { id } = req.params;
-    const sprintTest = await sprintTestService.getSprintTestById(id);
-    if (!sprintTest) return res.status(404).json({ message: "Jump Test not found" });
-    res.json(sprintTest);
+    const email = req.params.email;
+    const users = await rastService.getUserByEmail(email);
+
+    // ✅ Return empty array if no results (consistent with other services)
+    if (!users || users.length === 0) { 
+      return res.json([]);  
+    }
+
+    res.status(200).json(users); 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching RAST tests by email:', error); 
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 };
 
-const getsprintTestByEmail = async (req, res) => {
+exports.updateUser = async (req, res) => {
   try {
-    const { email } = req.params;
-    const sprintTest = await sprintTestService.getSprintTestByEmail(email);
-    if (!sprintTest) return res.status(404).json({ message: "Jump Test not found for this email" });
-    // if(!sprintTest || sprintTest.length === 0)
-    // {
-    //   return res.json([]); 
-    // }
-    res.json(sprintTest);
+    const userId = req.params.id;
+    const { name, email, sets, notes } = req.body;
+    
+    // ✅ Create update object with only provided fields
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (sets !== undefined) {
+      // Validate sets is an array if provided
+      if (!Array.isArray(sets)) {
+        return res.status(400).json({ 
+          error: 'Invalid data type',
+          message: 'sets must be an array'
+        });
+      }
+      updateData.sets = sets;
+    }
+    if (notes !== undefined) updateData.notes = notes;
+
+    const updatedUser = await rastService.updateUser(userId, updateData);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'RAST test not found' });
+    }
+    
+    res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error updating RAST test:', error);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 };
 
-const updatesprintTest = async (req, res) => {
+exports.deleteUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, email, gates, notes } = req.body;
-    const updatedsprintTest = await sprintTestService.updateSprintTest(id, { name, email, gates, notes, });
-    if (!updatedsprintTest) return res.status(404).json({ message: "Jump Test not found" });
-    res.json(updatedsprintTest);
+    const userId = req.params.id;
+    const deleted = await rastService.deleteUser(userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'RAST test not found' });
+    }
+    
+    res.status(200).json({ message: 'RAST test deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error deleting RAST test:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-};
-
-const deletesprintTest = async (req, res) => {
-  try {
-    const { id } = req.params;
-    await sprintTestService.deleteSprintTest(id);
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-module.exports = {
-  createsprintTest,
-  getAllsprintTests,
-  getsprintTestById,
-  getsprintTestByEmail,
-  updatesprintTest,
-  deletesprintTest,
 };
