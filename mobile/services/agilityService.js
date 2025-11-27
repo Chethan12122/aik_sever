@@ -6,11 +6,15 @@ const createAgilityTest = async (data) => {
   const query = `
     INSERT INTO agility_test (name, email, agility, created_at, notes)
     VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO agility_test (name, email, agility, created_at, notes)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *;
   `;
   const result = await pool.query(query, [name, email, agility, created_at,notes || '']);  // ✅ Add notes parameter
   return result.rows;
 };
+
+// Get all agility tests
 
 // Get all agility tests
 const getAllAgilityTests = async () => {
@@ -28,6 +32,7 @@ const getAgilityTestById = async (id) => {
 // Get agility test by Email
 const getAgilityTestByEmail = async (email) => {
   const query = 'SELECT * FROM agility_test WHERE email = $1 ORDER BY created_at DESC;'; // ✅ Add ordering
+  const query = 'SELECT * FROM agility_test WHERE email = $1 ORDER BY created_at DESC;'; // ✅ Add ordering
   const result = await pool.query(query, [email]);
   return result.rows;
 };
@@ -35,8 +40,11 @@ const getAgilityTestByEmail = async (email) => {
 // Update agility test
 const updateAgilityTest = async (id, data) => {
   const { name, email, agility, created_at, notes } = data; // ✅ Add notes
+  const { name, email, agility, created_at, notes } = data; // ✅ Add notes
   const query = `
     UPDATE agility_test
+    SET name = $1, email = $2, agility = $3, created_at = $4, notes = $5
+    WHERE id = $6
     SET name = $1, email = $2, agility = $3, created_at = $4, notes = $5
     WHERE id = $6
     RETURNING *;
