@@ -32,14 +32,12 @@ const getAgilityTestById = async (id) => {
 // Get agility test by Email
 const getAgilityTestByEmail = async (email) => {
   const query = 'SELECT * FROM agility_test WHERE email = $1 ORDER BY created_at DESC;'; // ✅ Add ordering
-  const query = 'SELECT * FROM agility_test WHERE email = $1 ORDER BY created_at DESC;'; // ✅ Add ordering
   const result = await pool.query(query, [email]);
   return result.rows;
 };
 
 // Update agility test
 const updateAgilityTest = async (id, data) => {
-  const { name, email, agility, created_at, notes } = data; // ✅ Add notes
   const { name, email, agility, created_at, notes } = data; // ✅ Add notes
   const query = `
     UPDATE agility_test
