@@ -108,6 +108,17 @@ app.use('/api', loadMonitoringRoutes);
 const orgRoutes = require('../mobile/routes/organizationRoutes');
 app.use('/api', orgRoutes);
 
+const userUploadRoute = require('../mobile/routes/userUpload');
+app.use('/api', userUploadRoute);
+
+const uploadTempDataRoute = require('../mobile/routes/uploadTempData');
+app.use('/api', uploadTempDataRoute);
+
+const exportAgilityRoute = require('../mobile/routes/exportAgility');
+app.use('/api', exportAgilityRoute);
+
+
+
 // #########################################################################
 
 module.exports = app;
