@@ -65,7 +65,7 @@ const uploadFirmware = async (req, res) => {
       });
     }
 
-    const fileUrl  = `https://talentclientbe.onrender.com/api/firmware/uploads/${req.file.filename}`;
+    const fileUrl  = `https://aik-sever.onrender.com/api/firmware/uploads/${req.file.filename}`;
     // const fileUrl  = `https://aikyam-hkfac5a0c6h5bqhe.centralindia-01.azurewebsites.net/api/firmware/uploads/${req.file.filename}`;
     const rows = await service.createFirmware({
       version,
