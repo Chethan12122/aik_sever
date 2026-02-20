@@ -117,7 +117,8 @@ app.use('/api', uploadTempDataRoute);
 const exportAgilityRoute = require('../mobile/routes/exportAgility');
 app.use('/api', exportAgilityRoute);
 
-
+const firmwareRoutes = require('../mobile/routes/firmwareRoutes');
+app.use('/api', firmwareRoutes);
 
 // #########################################################################
 
