@@ -120,6 +120,10 @@ app.use('/api', exportAgilityRoute);
 const firmwareRoutes = require('../mobile/routes/firmwareRoutes');
 app.use('/api', firmwareRoutes);
 
+const favoriteWorkoutRoutes = require('../mobile/routes/favoriteWorkoutRoutes');
+
+app.use('/api', favoriteWorkoutRoutes);
+
 // #########################################################################
 
 module.exports = app;

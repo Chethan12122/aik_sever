@@ -8,7 +8,7 @@ router.post('/organization/reject-request', orgController.rejectRequest);
 router.get('/organization/members/:ownerEmail', orgController.getMembers);
 router.post('/organization/remove-member', orgController.removeMember);
 router.get('/organization/incoming-invites/:recipientEmail', orgController.getIncomingInvites);
-router.get('/organization/member-of/:memberEmail', orgController.getMemberOrganizations);
+router.get('/organization/member-of/:memberEmail', orgController.getMemberOrganizations);     
 
 
 module.exports = router;

@@ -12,7 +12,7 @@ const createAgilityTest = async (data) => {
   return result.rows;
 };
 
-// Get all agility tests
+// Get all agility  tests
 
 // Get all agility tests
 const getAllAgilityTests = async () => {
