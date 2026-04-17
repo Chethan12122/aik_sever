@@ -316,3 +316,23 @@ exports.getLikeCount = async (req, res) => {
     res.status(500).json({ message: "Failed to get like count" });
   }
 };
+
+// Get all feeds liked by a user
+exports.getLikedFeedsByUser = async (req, res) => {
+  const { user_email } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT feeds.* 
+       FROM feeds 
+       INNER JOIN feeds_likes ON feeds.id = feeds_likes.feed_id 
+       WHERE feeds_likes.user_email = $1 
+       ORDER BY feeds_likes.created_at DESC`,
+      [user_email]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("DB query error:", err);
+    res.status(500).json({ message: "Failed to fetch liked feeds" });
+  }
+};
