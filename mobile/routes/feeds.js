@@ -9,9 +9,9 @@ router.post('/upload', upload.single('image'), feedController.uploadImage);
 router.get('/feeds/liked/:user_email', feedController.getLikedFeedsByUser);
 
 // CRUD
+router.get('/feeds/user/:user_email', feedController.getFeedsByUser);
 router.post('/feeds', feedController.createFeed);
 router.get('/feeds/:id', feedController.getFeedById);
-router.get('/feeds/user/:user_email', feedController.getFeedsByUser);
 router.get('/feeds',feedController.getFeedsForAllUser);
 router.put('/feeds/:id', feedController.updateFeed);
 router.delete('/feeds/:id', feedController.deleteFeed);
