@@ -6,6 +6,7 @@ const feedController = require('../controllers/feedsController');
 
 // Upload
 router.post('/upload', upload.single('image'), feedController.uploadImage);
+router.get('/feeds/liked/:user_email', feedController.getLikedFeedsByUser);
 
 // CRUD
 router.post('/feeds', feedController.createFeed);
@@ -20,7 +21,7 @@ router.post('/feeds/:feed_id/like', feedController.likeFeed);
 
 // Unlike a feed
 router.delete('/feeds/:feed_id/unlike', feedController.unlikeFeed);
-
+ 
 // Add a comment to a feed
 router.post('/feeds/:feed_id/comments', feedController.addComment);
 
