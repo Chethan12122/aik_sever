@@ -12,8 +12,6 @@ const createAgilityTest = async (data) => {
   return result.rows;
 };
 
-// Get all agility  tests
-
 // Get all agility tests
 const getAllAgilityTests = async () => {
   const result = await pool.query(`SELECT * FROM agility_test ORDER BY created_at DESC`);

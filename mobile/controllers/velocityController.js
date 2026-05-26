@@ -17,7 +17,7 @@ const createvelocityTest = async (req, res) => {
       name,
       email,
       velocity,
-      notes, // ✅ Optional field
+      notes, 
       created_at: created_at || new Date().toISOString()
     };
 
@@ -25,7 +25,7 @@ const createvelocityTest = async (req, res) => {
     res.status(201).json(newTest);
   } catch (error) {
     console.error('Error creating velocity test:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
@@ -39,7 +39,7 @@ const getvelocityTestById = async (req, res) => {
     if (velocityTest && velocityTest.length > 0) {
       res.status(200).json(velocityTest);
     } else {
-      res.status(404).json({ message: 'Velocity test not found' });
+      res.status(404).json({ message: 'velocity Test not found' });
     }
   } catch (error) {
     console.error('Error fetching velocity test by ID:', error);
@@ -97,7 +97,7 @@ const updatevelocityTest = async (req, res) => {
     if (updatedTest && updatedTest.length > 0) {
       res.status(200).json(updatedTest);
     } else {
-      res.status(404).json({ message: 'Velocity test not found' });
+      res.status(404).json({ message: 'velocity Test not found' });
     }
   } catch (error) {
     console.error('Error updating velocity test:', error);
@@ -113,9 +113,9 @@ const deletevelocityTest = async (req, res) => {
     
     // ✅ Check array length
     if (deletedTest && deletedTest.length > 0) {
-      res.status(200).json({ message: 'Velocity test deleted successfully' });
+      res.status(200).json({ message: 'velocity Test deleted successfully' });
     } else {
-      res.status(404).json({ message: 'Velocity test not found' });
+      res.status(404).json({ message: 'velocity Test not found' });
     }
   } catch (error) {
     console.error('Error deleting velocity test:', error);

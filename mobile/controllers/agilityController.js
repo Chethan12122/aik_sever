@@ -14,7 +14,7 @@ const createAgilityTest = async (req, res) => {
     res.status(201).json(newTest);
   } catch (error) {
     console.error('Error creating agility test:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 

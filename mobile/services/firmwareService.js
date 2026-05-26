@@ -1,4 +1,4 @@
-// firmware/services/firmware.service.js
+// firmware/services/firmwareService.js
 const pool = require('../../database/db');
 
 // Get latest firmware

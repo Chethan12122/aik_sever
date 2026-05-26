@@ -4,15 +4,12 @@ exports.createUser = async (req, res) => {
   try {
     const { name, email, sets, notes } = req.body;
     
-    // ✅ Validate required fields
     if (!name || !email || !sets) {
       return res.status(400).json({ 
         error: 'Missing required fields',
         required: ['name', 'email', 'sets']
       });
     }
-
-    // ✅ Validate sets is an array
     if (!Array.isArray(sets)) {
       return res.status(400).json({ 
         error: 'Invalid data type',
@@ -24,8 +21,8 @@ exports.createUser = async (req, res) => {
     const newUser = await rastService.createUser(userData);
     res.status(201).json(newUser);
   } catch (error) {
-    console.error('Error creating RAST test:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -33,14 +30,12 @@ exports.getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
     const user = await rastService.getUserById(userId);
-    
     if (!user) {
-      return res.status(404).json({ error: 'RAST test not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    res.status(200).json(user);
+    res.json(user);
   } catch (error) {
-    console.error('Error fetching RAST test by ID:', error);
+    console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -50,15 +45,14 @@ exports.getUserByEmail = async (req, res) => {
     const email = req.params.email;
     const users = await rastService.getUserByEmail(email);
 
-    // ✅ Return empty array if no results (consistent with other services)
     if (!users || users.length === 0) { 
       return res.json([]);  
     }
 
-    res.status(200).json(users); 
+    res.json(users); 
   } catch (error) {
-    console.error('Error fetching RAST tests by email:', error); 
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    console.error(error); 
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -84,15 +78,13 @@ exports.updateUser = async (req, res) => {
     if (notes !== undefined) updateData.notes = notes;
 
     const updatedUser = await rastService.updateUser(userId, updateData);
-    
     if (!updatedUser) {
-      return res.status(404).json({ error: 'RAST test not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    res.status(200).json(updatedUser);
+    res.json(updatedUser);
   } catch (error) {
-    console.error('Error updating RAST test:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -100,14 +92,12 @@ exports.deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
     const deleted = await rastService.deleteUser(userId);
-    
     if (!deleted) {
-      return res.status(404).json({ error: 'RAST test not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    res.status(200).json({ message: 'RAST test deleted successfully' });
+    res.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('Error deleting RAST test:', error);
+    console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

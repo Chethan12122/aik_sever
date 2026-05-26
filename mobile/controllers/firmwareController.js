@@ -1,9 +1,13 @@
-// firmware/controllers/firmware.controller.js
-const path    = require('path');
-const fs      = require('fs');
+// firmware/controllers/firmwareController.js
 const service = require('../services/firmwareService');
+const { BlobServiceClient } = require('@azure/storage-blob');
+require('dotenv').config();
 
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
+const blobServiceClient = BlobServiceClient.fromConnectionString(
+  process.env.AZURE_STORAGE_CONNECTION_STRING
+);
+
+const firmwareContainerClient = blobServiceClient.getContainerClient('firmware');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /firmware/latest
@@ -51,40 +55,58 @@ const uploadFirmware = async (req, res) => {
     const { version, changelog } = req.body;
 
     if (!version) {
-      fs.unlinkSync(req.file.path); // clean up file if version missing
-      return res.status(400).json({ success: false, message: 'version is required in body' });
-    }
-
-    // Check version doesn't already exist
-    const existing = await service.getFirmwareByVersion(version);
-    if (existing.length > 0) {
-      fs.unlinkSync(req.file.path);
-      return res.status(409).json({
+      return res.status(400).json({
         success: false,
-        message: `Version ${version} already exists. Use a new version number.`,
+        message: 'version is required in body',
       });
     }
 
-    const fileUrl  = `https://aik-sever.onrender.com/api/firmware/uploads/${req.file.filename}`;
-    // const fileUrl  = `https://aikyam-hkfac5a0c6h5bqhe.centralindia-01.azurewebsites.net/api/firmware/uploads/${req.file.filename}`;
+    // Check version already exists
+    const existing = await service.getFirmwareByVersion(version);
+    if (existing.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Version ${version} already exists`,
+      });
+    }
+
+const blobName = req.file.originalname;
+
+const blockBlobClient =
+  firmwareContainerClient.getBlockBlobClient(blobName);
+
+await blockBlobClient.upload(req.file.buffer, req.file.size, {
+  blobHTTPHeaders: {
+    blobContentType: 'application/octet-stream',
+  },
+});
+
+const blobUrl = `https://testingblog.blob.core.windows.net/firmware/${blobName}`;
+
+    // Save in DB
     const rows = await service.createFirmware({
       version,
-      filename:  req.file.filename,
-      file_path: fileUrl,
+      filename: blobUrl.split('/').pop(),
+      file_path: blobUrl,
       file_size: req.file.size,
       changelog: changelog || '',
     });
 
-    console.log(`✅ Firmware v${version} uploaded (${req.file.size} bytes)`);
+    console.log(`✅ Firmware v${version} uploaded to Azure`);
 
     return res.status(201).json({
-      success:  true,
-      message:  `Firmware v${version} uploaded successfully`,
+      success: true,
+      message: `Firmware v${version} uploaded successfully`,
       firmware: rows[0],
     });
+
   } catch (err) {
     console.error('uploadFirmware error:', err);
-    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: err.message,
+    });
   }
 };
 
@@ -124,32 +146,73 @@ const deleteFirmware = async (req, res) => {
   try {
     const { version } = req.params;
 
+    // 1️⃣ Check if firmware exists
     const existing = await service.getFirmwareByVersion(version);
     if (existing.length === 0) {
-      return res.status(404).json({ success: false, message: `Version ${version} not found` });
-    }
-
-    if (existing[0].is_latest) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
-        message: 'Cannot delete the current latest firmware. Rollback to another version first.',
+        message: `Version ${version} not found`,
       });
     }
 
-    // Delete file from disk
-    const filePath = path.join(UPLOADS_DIR, existing[0].filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // 2️⃣ Prevent deleting latest firmware
+    if (existing[0].is_latest) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Cannot delete the current latest firmware. Rollback to another version first.',
+      });
     }
 
+    // 3️⃣ Delete from Azure
+    const blockBlobClient =
+      firmwareContainerClient.getBlockBlobClient(existing[0].filename);
+
+    await blockBlobClient.deleteIfExists();
+
+    // 4️⃣ Delete from DB
     await service.deleteFirmwareByVersion(version);
 
-    console.log(`🗑️  Deleted firmware v${version}`);
+    console.log(`🗑️ Deleted firmware v${version}`);
 
-    return res.json({ success: true, message: `v${version} deleted` });
+    return res.json({
+      success: true,
+      message: `v${version} deleted`,
+    });
+
   } catch (err) {
     console.error('deleteFirmware error:', err);
-    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: err.message,
+    });
+  }
+};
+const listAzureFiles = async (req, res) => {
+  try {
+    const files = [];
+
+    for await (const blob of firmwareContainerClient.listBlobsFlat()) {
+      files.push({
+        name: blob.name,
+        size: blob.properties.contentLength,
+        uploaded: blob.properties.lastModified,
+      });
+    }
+
+    return res.json({
+      success: true,
+      total: files.length,
+      files,
+    });
+
+  } catch (err) {
+    console.error("listAzureFiles error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -159,4 +222,5 @@ module.exports = {
   uploadFirmware,
   rollbackFirmware,
   deleteFirmware,
+  listAzureFiles, 
 };
