@@ -9,6 +9,7 @@ router.get('/organization/members/:ownerEmail', orgController.getMembers);
 router.post('/organization/remove-member', orgController.removeMember);
 router.get('/organization/incoming-invites/:recipientEmail', orgController.getIncomingInvites);
 router.get('/organization/member-of/:memberEmail', orgController.getMemberOrganizations);     
+router.get('/organization/athletes/:ownerEmail', orgController.getOrganizationAthletes);
 
 
 module.exports = router;

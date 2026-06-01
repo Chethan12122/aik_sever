@@ -323,7 +323,7 @@ exports.getLikedFeedsByUser = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT feeds.* 
+      `SELECT feeds.*, feeds_likes.created_at 
        FROM feeds 
        INNER JOIN feeds_likes ON feeds.id = feeds_likes.feed_id 
        WHERE feeds_likes.user_email = $1 

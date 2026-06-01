@@ -71,4 +71,16 @@ exports.getMemberOrganizations = async (req, res) => {
   }
 };
 
+exports.getOrganizationAthletes = async (req, res) => {
+  try {
+    const { ownerEmail } = req.params;
+
+    const athletes =
+      await organizationService.getOrganizationAthletes(ownerEmail);
+
+    res.json(athletes);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
 

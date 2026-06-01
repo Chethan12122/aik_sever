@@ -149,6 +149,27 @@ async function getMemberOrganizations(memberEmail) {
   return res.rows;
 }
 
+async function getOrganizationAthletes(ownerEmail) {
+  const orgOwnerId = await getUserIdByEmail(ownerEmail);
+
+  const res = await pool.query(`
+    SELECT 
+      u.id,
+      u.name,
+      u.email
+    FROM organization_members om
+    JOIN users u 
+      ON om.member_user_id = u.id
+    WHERE 
+      om.org_owner_id = $1
+      AND om.role = 'athlete'
+      AND om.status = 'accepted'
+    ORDER BY u.name ASC
+  `, [orgOwnerId]);
+
+  return res.rows;
+}
+
 
 module.exports = {
   sendRequest,
@@ -158,4 +179,5 @@ module.exports = {
   removeMember,
   getIncomingInvitesService,
   getMemberOrganizations,
+  getOrganizationAthletes,
 };
